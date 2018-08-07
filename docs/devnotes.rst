@@ -34,8 +34,8 @@ You can fix this by running the following commands::
     export PIP_REQUIRE_VIRTUALENV=false
     /Applications/Python\ 3.6/Install\ Certificates.command
 
-Generate Swagger Client
------------------------
+Generating Swagger Clients
+--------------------------
 
 The NiFi and NiFi Registry REST API clients are generated using swagger-codegen, which is available via a variety of methods:
 
@@ -84,7 +84,7 @@ NiFi Registry Swagger Client
     rm -rf ~/tmp/nifi-registry-python-client && \
     swagger-codegen generate \
         --lang python \
-        --config swagger-registry-python-config.json \
+        --config ~/tmp/swagger-registry-python-config.json \
         --api-package apis \
         --model-package models \
         --template-dir /path/to/nipyapi/swagger_templates \
@@ -97,7 +97,28 @@ NiFi Registry Swagger Client
 
 4. review the changes and submit a PR!
 
+Hortonworks Schema Registry Swagger Client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+1. Start a Hortonworks Schema Registry instance, for example the Docker provided in $proj_root/test_env_config/docker_file_hwx_schema_registry/Dockerfile
+2. Browse to http://localhost:9090/swagger.json , or the relevant URL for your instance
+3. Save a copy of this file locally
+4. Use swagger-codegen to generate the Python client::
+
+    mkdir -p ~/tmp && \
+    echo '{ "packageName": "schema" }' > ~/tmp/swagger-schema-python-config.json && \
+    rm -rf ~/tmp/schema-registry-python-client && \
+    swagger-codegen generate \
+        --lang python \
+        --config ~/tmp/swagger-schema-python-config.json \
+        --api-package apis \
+        --model-package models \
+        --template-dir /path/to/nipyapi/swagger_templates \
+        --input-spec /path/to/schema-registry/swagger.json \
+        --output ~/tmp/schema-registry-python-client
+
+5. Clean up the client, as Python does not accept classes and modules starting with numerics etc.
+6. Review your changes and submit a PR!
 
 Release Process
 ---------------

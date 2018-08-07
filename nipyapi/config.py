@@ -11,6 +11,7 @@ import logging
 import os
 from nipyapi.nifi import configuration as nifi_config
 from nipyapi.registry import configuration as registry_config
+from nipyapi.schema import configuration as schema_config
 
 
 # --- Logging ------
@@ -27,6 +28,8 @@ logging.basicConfig(level=logging.WARNING)
 nifi_config.host = 'http://localhost:8080/nifi-api'
 # Set Default Host for NiFi-Registry
 registry_config.host = 'http://localhost:18080/nifi-registry-api'
+# Set Default host for Schema-Registry
+schema_config.host = 'http://localhost:9090'
 
 
 # ---  Project Root ------
