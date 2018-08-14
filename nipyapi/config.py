@@ -11,7 +11,7 @@ import logging
 import os
 from nipyapi.nifi import configuration as nifi_config
 from nipyapi.registry import configuration as registry_config
-from nipyapi.schema import configuration as schema_config
+from nipyapi.hwx_schema import configuration as schema_config
 
 
 # --- Logging ------

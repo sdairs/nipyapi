@@ -13,7 +13,7 @@ import nipyapi
 log = logging.getLogger(__name__)
 
 # Test Configuration parameters
-test_host = 'ec2-35-178-192-124.eu-west-2.compute.amazonaws.com'
+test_host = 'ec2-18-130-200-128.eu-west-2.compute.amazonaws.com'
 test_basename = "nipyapi_test"
 test_pg_name = test_basename + "_ProcessGroup"
 test_registry_client_name = test_basename + "_reg_client"
@@ -49,6 +49,7 @@ if "TRAVIS" in environ and environ["TRAVIS"] == "true":
          'http://localhost:8080/nifi-api'
          )
     ]
+    schema_test_endpoints = ['http://localhost:9090']
 else:
     log.info("Running tests on NOT TRAVIS, enabling regression suite")
     # Note that these endpoints are assumed to be available
@@ -76,6 +77,9 @@ else:
          'http://' + test_host + ':8080/nifi-api'
          )  # Default to latest version
     ]
+    schema_test_endpoints = [
+        'http://' + test_host + ':9090'
+    ]
 
 
 # 'regress' generates tests against previous versions of NiFi or sub-projects.
@@ -99,6 +103,14 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize(
             argnames='regress_flow_reg',
             argvalues=registry_test_endpoints,
+            indirect=True
+        )
+    elif 'regress_schema' in metafunc.fixturenames:
+        log.info("Schema Registry Regression testing requested for ({0})."
+                 .format(metafunc.function.__name__))
+        metafunc.parametrize(
+            argnames='regress_schema_reg',
+            argvalues=schema_test_endpoints,
             indirect=True
         )
 
@@ -144,11 +156,20 @@ def regress_flow_reg(request):
     nipyapi.config.registry_local_name = request.param[1]
 
 
+@pytest.fixture(scope="function")
+def regress_schema(request):
+    log.info("Schema Reg Regression test setup called against endpoint %s",
+             request.param)
+    nipyapi.utils.set_endpoint(request.param, service='schema')
+
+
 # Tests that the Docker test environment is available before running test suite
 @pytest.fixture(scope="session", autouse=True)
 def session_setup(request):
     log.info("Commencing test session setup")
-    for url in nifi_test_endpoints + [x[0] for x in registry_test_endpoints]:
+    for url in nifi_test_endpoints \
+               + [x[0] for x in registry_test_endpoints]\
+               + schema_test_endpoints:
         nipyapi.utils.set_endpoint(url)
         target_url = url.replace('-api', '')
         if not nipyapi.utils.wait_to_complete(
@@ -180,7 +201,13 @@ def session_setup(request):
                     raise ValueError("No Response from NiFi-Registry test call"
                                      )
             else:
-                raise ValueError("Bad API Endpoint")
+                # Assuming Schema Registry endpoint
+                if nipyapi.hwx_schema.OtherApi().get_version():
+                    log.info("Tested Schema-Registry client connection, got "
+                             "response from %s", url)
+                else:
+                    raise ValueError("No Response from Schema-Registry test"
+                                     " call")
     log.info("Completing Test Session Setup")
 
 

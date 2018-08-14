@@ -255,21 +255,34 @@ def is_endpoint_up(endpoint_url):
         return False
 
 
-def set_endpoint(endpoint_url):
+def set_endpoint(endpoint_url, service=None):
     """
     EXPERIMENTAL
 
-    Sets the endpoint when switching between instances of NiFi or other
+    Sets the client endpoint when switching between instances of NiFi or other
     projects. Not tested extensively with secured instances.
 
     Args:
         endpoint_url (str): The URL to set as the endpoint. Autodetects the
-        relevant service e.g. 'http://localhost:18080/nifi-registry-api'
+            relevant service e.g. 'http://localhost:18080/nifi-registry-api'
+        service (str): Explicitly call the service to connect to, defaults to
+            None for autodetection.
 
     Returns (bool): True for success, False for not
     """
     log.info("Called set_endpoint with args %s", locals())
-    if 'nifi-api' in endpoint_url:
+    if service is None:
+        if '/nifi-api' in endpoint_url:
+            target = 'nifi'
+        elif '/nifi-registry-api' in endpoint_url:
+            target = 'registry'
+        else:
+            # Nothing to explicitly detect a schema target, so just defaulting
+            # to it for user convenience
+            target = 'schema'
+    else:
+        target = service
+    if target == 'nifi':
         log.info("Setting NiFi endpoint to %s", endpoint_url)
         if nipyapi.config.nifi_config.api_client:
             nipyapi.config.nifi_config.api_client.host = endpoint_url
@@ -277,7 +290,7 @@ def set_endpoint(endpoint_url):
         if nipyapi.config.nifi_config.host == endpoint_url:
             return True
         return False
-    if 'registry-api' in endpoint_url:
+    elif target == 'registry':
         log.info("Setting Registry endpoint to %s", endpoint_url)
         if nipyapi.config.registry_config.api_client:
             nipyapi.config.registry_config.api_client.host = endpoint_url
@@ -285,7 +298,15 @@ def set_endpoint(endpoint_url):
         if nipyapi.config.registry_config.host == endpoint_url:
             return True
         return False
-    raise ValueError("Unrecognised NiFi or subproject API Endpoint")
+    elif target == 'schema':
+        log.info("Setting Schema Client endpoint to %s", endpoint_url)
+        if nipyapi.config.schema_config.api_client:
+            nipyapi.config.schema_config.api_client.host = endpoint_url
+        nipyapi.config.schema_config.host = endpoint_url
+        if nipyapi.config.schema_config.host == endpoint_url:
+            return True
+    raise ValueError("Unrecognised NiFi or subproject API Endpoint, or service"
+                     " parameter not set or recognised.")
 
 
 class DockerContainer(object):
