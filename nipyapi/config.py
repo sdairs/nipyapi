@@ -29,13 +29,15 @@ logging.basicConfig(level=logging.WARNING)
 default_host = 'localhost'  # Default to localhost for release
 
 nifi_host = default_host
+nifi_port = 8080
 registry_host = default_host
+registry_port = 18080
 efm_host = default_host
+efm_port = 10080
 #
-nifi_config.host = os.getenv('NIFI_API_ENDPOINT', 'http://' + nifi_host + ':9090/nifi-api')
-# Set Default Host for NiFi-Registry
-registry_config.host = 'http://' + registry_host + ':18080/nifi-registry-api'
-efm_config.host = 'http://' + efm_host + ':10080/efm/api'
+nifi_config.host = os.getenv('NIFI_API_ENDPOINT', 'http://' + nifi_host + ':' + str(nifi_port) + '/nifi-api')
+registry_config.host = 'http://' + registry_host + ':' + str(registry_port) + '/nifi-registry-api'
+efm_config.host = 'http://' + efm_host + ':' + str(efm_port) + '/efm/api'
 
 
 # Set SSL Handling
