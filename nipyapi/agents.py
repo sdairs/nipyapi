@@ -18,7 +18,7 @@ __f_api = nipyapi.efm.FlowsApi()
 
 
 def create_processor(flow_name, type_name, pg_id=None, position=None, name=None,
-                     properties=None, schedule=None, terminate=None):
+                     properties=None, schedule=None, terminate=None, concurrency=None):
     # Handle defaults
     position = position if position else suggest_object_position(flow_name)
     pg_id = pg_id if pg_id else _get_root_pg_id(flow_name)
@@ -59,7 +59,8 @@ def create_processor(flow_name, type_name, pg_id=None, position=None, name=None,
                 name=name,
                 properties=properties,
                 scheduling_period=schedule,
-                auto_terminated_relationships=terminate
+                auto_terminated_relationships=terminate,
+                concurrently_schedulable_task_count=concurrency
             )
         )
     )
@@ -260,7 +261,8 @@ def import_flow_to_canvas(flow_name, filename=None, yaml=True, overwrite=True):
                 name=proc['name'],
                 type_name=proc['class'],
                 schedule=proc['scheduling period'],
-                properties=proc['Properties']
+                properties=proc['Properties'],
+                concurrency=proc['concurrency'] if 'concurrency' in proc else None
             )
     if 'Remote Process Groups' in flow_def:
         for rpg in flow_def['Remote Process Groups']:
@@ -275,12 +277,24 @@ def import_flow_to_canvas(flow_name, filename=None, yaml=True, overwrite=True):
             dest = _get_flow_component_by_name(flow_name, con['destination'])
             assert source is not None
             assert dest is not None
+            # Lookup remote port id in NiFi if specified
+            if 'port' in con.keys():
+                nifi_port = [
+                    x for x in
+                    nipyapi.canvas.list_all_input_ports() + nipyapi.canvas.list_all_output_ports()
+                    if x.status.name == con['port']
+                ]
+                if not nifi_port or len(nifi_port) > 1:
+                    raise ValueError("Remote Process Group Port [%s] not found or name not unique", con['port'])
+                remote_port = nifi_port[0].id
+            else:
+                remote_port = None
             create_connection(
                 flow_name=flow_name,
                 source=source,
                 dest=dest,
                 relationships=con['source relationship names'],
-                remote_port=con['port'] if 'port' in con.keys() else None,
+                remote_port=remote_port,
                 name=con['name']
             )
 
@@ -289,13 +303,15 @@ def import_flow_to_canvas(flow_name, filename=None, yaml=True, overwrite=True):
 #######################
 
 
-def _get_flow_designer_id_by_name(flow_name):
+def _get_flow_designer_id_by_name(flow_name, strict=True):
     out = [
         x['identifier'] for x in __fd_api.get_flows().elements
         if x['agentClass'].startswith(flow_name)
     ]
     if not out:
-        return None
+        if not strict:
+            return None
+        raise ValueError("flow_name [%s] not found", flow_name)
     return out[0]
 
 
