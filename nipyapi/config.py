@@ -12,6 +12,7 @@ import os
 import urllib3
 from nipyapi.nifi import configuration as nifi_config
 from nipyapi.registry import configuration as registry_config
+from nipyapi.efm import configuration as efm_config
 
 
 # --- Logging ------
@@ -27,9 +28,10 @@ logging.basicConfig(level=logging.WARNING)
 # Set Default Host for NiFi
 default_host = 'localhost'  # Default to localhost for release
 #
-nifi_config.host = os.getenv('NIFI_API_ENDPOINT', 'http://' + default_host + ':8080/nifi-api')
+nifi_config.host = os.getenv('NIFI_API_ENDPOINT', 'http://' + default_host + ':9090/nifi-api')
 # Set Default Host for NiFi-Registry
 registry_config.host = 'http://' + default_host + ':18080/nifi-registry-api'
+efm_config.host = 'http://' + default_host + ':10080/efm/api'
 
 
 # Set SSL Handling
@@ -40,6 +42,7 @@ global_ssl_verify = True
 
 nifi_config.verify_ssl = global_ssl_verify
 registry_config.verify_ssl = global_ssl_verify
+efm_config.verify_ssl = global_ssl_verify
 if not global_ssl_verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -99,6 +102,7 @@ registered_filters = {
 # If False, then we believe we are incompatible
 nifi_config.version_check = None
 registry_config.version_check = None
+efm_config.version_check = None
 
 
 # --- Simple Cache
