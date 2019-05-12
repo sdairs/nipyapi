@@ -8,9 +8,6 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('docs/history.rst') as history_file:
-    history = history_file.read()
-
 proj_version = '0.13.2'
 
 with open('requirements.txt') as reqs_file:
@@ -20,7 +17,7 @@ setup(
     name='nipyapi',
     version=proj_version,
     description="Nifi-Python-Api: A convenient Python wrapper for the Apache NiFi Rest API",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Daniel Chaffelson",
     author_email='chaffelson@gmail.com',
     url='https://github.com/Chaffelson/nipyapi',
