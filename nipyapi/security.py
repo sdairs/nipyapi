@@ -355,6 +355,8 @@ def set_service_auth_token(token=None, token_name='tokenAuth', service='nifi'):
     assert token is None or isinstance(token, six.string_types)
     if service == 'registry':
         configuration = nipyapi.config.registry_config
+    elif service == 'efm':
+        configuration = nipyapi.config.efm_config
     else:
         configuration = nipyapi.config.nifi_config
     if token:

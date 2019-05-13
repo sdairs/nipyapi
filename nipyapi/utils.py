@@ -255,7 +255,7 @@ def is_endpoint_up(endpoint_url):
     """
     log.info("Called is_endpoint_up with args %s", locals())
     try:
-        response = requests.get(endpoint_url)
+        response = requests.get(endpoint_url, timeout=3)
         if response.status_code == 200:
             log.info("Got 200 response from endpoint, returning True")
             return True
@@ -303,10 +303,12 @@ def set_endpoint(endpoint_url, ssl=False, login=False):
         raise ValueError("Endpoint not recognised")
     log.info("Setting %s endpoint to %s", service, endpoint_url)
     if configuration.api_client:
-        # Running controlled logout procedure
-        nipyapi.security.service_logout(service)
-        # Resetting API client so it recreates from config.host
-        configuration.api_client = None
+        # Check currently configured endpoint is reachable
+        if is_endpoint_up(endpoint_url[:-4]):  # removes -api or /api from endpoint
+            # Running controlled logout procedure
+            nipyapi.security.service_logout(service)
+            # Resetting API client so it recreates from config.host
+            configuration.api_client = None
     configuration.host = endpoint_url
     if 'https://' in endpoint_url and ssl:
         if not login:

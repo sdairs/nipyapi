@@ -7,6 +7,7 @@ Warnings: Experimental
 """
 
 from __future__ import absolute_import
+import six
 import logging
 import nipyapi
 
@@ -299,7 +300,7 @@ def _get_flow_designer_id_by_name(flow_name):
         x['identifier'] for x in __fd_api.get_flows().elements
         if x['agentClass'] == flow_name  # Note exact match requirement
     ]
-    if out is not None:
+    if out:  # flow_name == '' may produce an empty list
         return out[0]  # Flow Names are unique so we enforce unique lookup
     return None
 
