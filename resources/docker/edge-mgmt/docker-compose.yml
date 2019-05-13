@@ -1,0 +1,53 @@
+version: '2'
+services:
+  nifi:
+    image: apache/nifi:1.9.2
+    container_name: nifi
+    hostname: nifi
+    ports:
+      - "8080:8080"
+  registry:
+    image: apache/nifi-registry:0.3.0
+    container_name: registry
+    hostname: registry
+    ports:
+      - "18080:18080"
+  flowops:
+      image: kevdoran/flowops:0.1.0
+      container_name: flowops
+      hostname: flowops
+      depends_on:
+        - registry
+        - nifi
+      environment:
+        - NIFI_URL=http://nifi:8080
+        - REGISTRY_URL=http://registry:18080
+        - REGISTRY_NAME=nipyapi_test_registry
+        - REGISTRY_BUCKET_NAME=nipyapi_test_efm
+      command: [
+          -c, "create-registry-bucket && add-registry-to-nifi"
+      ]
+  c2:
+    image: hortonworks/efm
+    ports:
+        - 10080:10080
+    container_name: c2
+    hostname: c2
+    depends_on:
+      - flowops
+    environment:
+        - EFM_NIFI_REGISTRY_ENABLED=true
+        - EFM_NIFI_REGISTRY_URL=http://registry:18080
+        - EFM_NIFI_REGISTRY_BUCKET_NAME=nipyapi_test_efm
+  minificpp:
+      image: hortonworks/test-nifi-minifi-cpp
+      container_name: minificpp
+      hostname: minificpp
+      environment:
+          - AGENT_CLASS=minificpp
+  minifijava:
+      image: hortonworks/test-nifi-minifi-java
+      container_name: minifijava
+      hostname: minifijava
+      environment:
+          - AGENT_CLASS=minifijava

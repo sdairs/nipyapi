@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.WARNING)
 # convenience function for this in nipyapi.utils.set_endpoint
 
 # Set Default Host for NiFi
-default_host = 'localhost'  # Default to localhost for release
+default_host = '108.128.200.38'  # Default to localhost for release
 
 nifi_host = default_host
 nifi_port = 8080

@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 test_default = True  # Default to True for release
 test_security = False  # Default to False for release
 test_regression = False  # Default to False for release
+test_c2 = True
 
 # Test Configuration parameters
 test_host = nipyapi.config.default_host
@@ -45,6 +46,10 @@ test_templates = {
     'basic': test_basename + 'Template_00',
     'complex': test_basename + 'Template_01'
 }
+
+test_minifijava_name = test_basename + '_minifijava'
+test_minificpp_name = test_basename + '_minificpp'
+test_efm_bucket = test_basename + '_efm'
 
 # Determining test environment
 # Can't use skiptest with parametrize for Travis

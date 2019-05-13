@@ -296,6 +296,9 @@ def set_endpoint(endpoint_url, ssl=False, login=False):
     elif 'registry-api' in endpoint_url:
         configuration = nipyapi.config.registry_config
         service = 'registry'
+    elif '/efm/api' in endpoint_url:
+        configuration = nipyapi.config.efm_config
+        service = 'efm'
     else:
         raise ValueError("Endpoint not recognised")
     log.info("Setting %s endpoint to %s", service, endpoint_url)

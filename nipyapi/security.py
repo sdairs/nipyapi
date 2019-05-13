@@ -29,7 +29,7 @@ __all__ = ['create_service_user', 'create_service_user_group',
 # These are the known-valid policy actions
 _valid_actions = ['read', 'write', 'delete']
 # These are the services that these functions know how to configure
-_valid_services = ['nifi', 'registry']
+_valid_services = ['nifi', 'registry', 'efm']
 
 
 def list_service_users(service='nifi'):

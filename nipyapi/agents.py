@@ -33,16 +33,7 @@ def create_processor(flow_name, type_name, pg_id=None, position=None, name=None,
         raise ValueError("More than one Processor Type [%s] found containing %s",
                          str([x.type for x in proc_summary]), type_name)
     proc_summary = proc_summary[0]
-    # Second, fetch the detailed definition from the Manifest
-    # proc_def = [
-    #     [
-    #         y for y in x.component_manifest.processors
-    #         if proc_summary.type == y.type
-    #     ]
-    #     for x in __am_api.get_agent_manifest(proc_summary.agent_manifest_id).bundles
-    #     if proc_summary.artifact == x.artifact
-    # ][0][0]
-    # Third, create it
+    # Second create it
     return __fd_api.create_processor(
         flow_id=_get_flow_designer_id_by_name(flow_name),
         pg_id=pg_id,
@@ -303,81 +294,88 @@ def import_flow_to_canvas(flow_name, filename=None, yaml=True, overwrite=True):
 #######################
 
 
-def _get_flow_designer_id_by_name(flow_name, strict=True):
+def _get_flow_designer_id_by_name(flow_name):
     out = [
         x['identifier'] for x in __fd_api.get_flows().elements
-        if x['agentClass'].startswith(flow_name)
+        if x['agentClass'] == flow_name  # Note exact match requirement
     ]
-    if not out:
-        if not strict:
-            return None
-        raise ValueError("flow_name [%s] not found", flow_name)
-    return out[0]
+    if out is not None:
+        return out[0]  # Flow Names are unique so we enforce unique lookup
+    return None
 
 
 def _get_flow_registry_id_by_name(flow_name):
     di = _get_flow_designer_id_by_name(flow_name)
-    out = __fd_api.get_flow_version_info(di)
-    if not out or out.version_info is None:
-        return None
-    return out.version_info.registry_flow_id
+    if di is not None:
+        out = __fd_api.get_flow_version_info(di)
+        if out is not None:
+            return out.version_info.registry_flow_id
+    return None
 
 
 def _get_flow_publish_id_by_name(flow_name):
     ri = _get_flow_registry_id_by_name(flow_name)
-    if not ri:
-        return None
-    flow_vers = [
-        x for x in __f_api.get_all_flow_summaries().flows
-        if ri == x.registry_flow_id
-    ]
-    if not flow_vers:
-        return None
-    sorted_flow_vers = sorted(flow_vers, key=lambda x: x.registry_flow_version)
-    return sorted_flow_vers[-1].id
+    if ri is not None:
+        flow_vers = [
+            x for x in __f_api.get_all_flow_summaries().flows
+            if ri == x.registry_flow_id
+        ]
+        if flow_vers is not None:
+            sorted_flow_vers = sorted(flow_vers, key=lambda x: x.registry_flow_version)
+            return sorted_flow_vers[-1].id
+    return None
 
 
 def _get_root_pg_id(flow_name):
     out = [
         x['rootProcessGroupIdentifier'] for x in
         __fd_api.get_flows().elements
-        if x['agentClass'].startswith(flow_name)
+        if x['agentClass'] == flow_name  # exact match
     ]
-    if not out:
-        return None
-    return out[0]
+    if out is not None:
+        return out[0]  # Flow names are unique
+    return None
 
 
 def _list_flow_components(flow_name):
     positionable_objects = ['processors', 'funnels', 'remote_process_groups']
-    flow = __fd_api.get_flow(_get_flow_designer_id_by_name(flow_name))
-    return [
-        i for s in
-        [flow.flow_content.__getattribute__(x) for x in positionable_objects]
-        for i in s
-    ]
+    di = _get_flow_designer_id_by_name(flow_name)
+    if di is not None:
+        flow = __fd_api.get_flow(di)
+        return [
+            i for s in
+            [flow.flow_content.__getattribute__(x) for x in positionable_objects]
+            for i in s
+        ]
+    return None
 
 
 def _remove_flow_components(flow_name, components):
-    flow_id = _get_flow_designer_id_by_name(flow_name)
-    for component in components:
-        get_handle = __fd_api.__getattribute__('get_' + component.component_type.lower())
-        target_obj = get_handle(flow_id, component.identifier)
-        del_handle = __fd_api.__getattribute__('delete_' + component.component_type.lower())
-        del_handle(
-            flow_id,
-            target_obj.component_configuration.identifier,
-            version=target_obj.revision.version
-        )
+    fi = _get_flow_designer_id_by_name(flow_name)
+    if fi is not None:
+        return_list = []
+        for component in components:
+            get_handle = __fd_api.__getattribute__('get_' + component.component_type.lower())
+            target_obj = get_handle(fi, component.identifier)
+            del_handle = __fd_api.__getattribute__('delete_' + component.component_type.lower())
+            return_list += del_handle(
+                fi,
+                target_obj.component_configuration.identifier,
+                version=target_obj.revision.version
+            )
+        return return_list
+    return False
 
 
 def _get_flow_component_by_name(flow_name, component_name):
-    out = [
-        x for x in _list_flow_components(flow_name)
-        if component_name == x.name
-    ]
-    if not out:
-        return None
-    if len(out) > 1:
-        raise ValueError("Name not unique on Canvas")
-    return out[0]
+    flow_components = _list_flow_components(flow_name)
+    if flow_components:
+        out = [
+            x for x in _list_flow_components(flow_name)
+            if component_name == x.name
+        ]
+        if out is not None:
+            if len(out) > 1:
+                raise ValueError("Name not unique on Canvas")
+            return out[0]
+    return None
