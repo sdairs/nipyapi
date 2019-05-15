@@ -165,9 +165,10 @@ def suggest_object_position(flow_name):
     # snakes down then up from left to right with noted spacing and row count
     obj_spacing = 200
     obj_per_col = 5
-    current_positions = [i.position for i in _list_flow_components(flow_name)]
-    if not current_positions:
-        return nipyapi.efm.Position(x=obj_spacing, y=obj_spacing)
+    flow_components = _list_flow_components(flow_name)
+    if not flow_components:
+        return nipyapi.efm.Position(obj_spacing,  obj_spacing)
+    current_positions = [i.position for i in flow_components]
     object_count = len(current_positions)
     max_x = max([
         i.x for i in current_positions
@@ -348,7 +349,7 @@ def _list_flow_components(flow_name):
             [flow.flow_content.__getattribute__(x) for x in positionable_objects]
             for i in s
         ]
-    return None
+    return []
 
 
 def _remove_flow_components(flow_name, components):
