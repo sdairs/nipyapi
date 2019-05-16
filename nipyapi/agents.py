@@ -334,7 +334,7 @@ def _get_root_pg_id(flow_name):
         __fd_api.get_flows().elements
         if x['agentClass'] == flow_name  # exact match
     ]
-    if out is not None:
+    if out:
         return out[0]  # Flow names are unique
     return None
 
