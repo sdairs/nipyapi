@@ -23,6 +23,8 @@ def create_processor(flow_name, type_name, pg_id=None, position=None, name=None,
     # Handle defaults
     position = position if position else suggest_object_position(flow_name)
     pg_id = pg_id if pg_id else _get_root_pg_id(flow_name)
+    if not pg_id:
+        raise ValueError("Could not fetch Root Process Group ID, Flow is not ready for editing")
     # First, fetch the basic processor definition from the Flow associated with this agent class
     proc_summary = [
         x for x in list_processor_types(flow_name)
@@ -149,12 +151,16 @@ def create_remote_process_group(flow_name, target_uris, pg_id=None, position=Non
 
 def list_processor_types(flow_name):
     di = _get_flow_designer_id_by_name(flow_name)
-    return __fd_api.get_processor_types(di).component_types
+    if di is not None:
+        return __fd_api.get_processor_types(di).component_types
+    return []
 
 
 def list_controller_types(flow_name):
     di = _get_flow_designer_id_by_name(flow_name)
-    return __fd_api.get_controller_service_types(di).component_types
+    if di is not None:
+        return __fd_api.get_controller_service_types(di).component_types
+    return None
 
 
 def purge_canvas(flow_name):
