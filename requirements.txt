@@ -8,7 +8,8 @@ six>=1.11.0
 packaging>=17.1
 
 # Templates management implementation
-lxml>=4.1.1
+# lxml 4.4 requires python 3.5 or newer, EFM requires 3.4 currently
+lxml>=4.1.1,<4.4
 
 # Security and Connectivity
 requests[security]>=2.18
