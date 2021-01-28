@@ -1627,3 +1627,60 @@ def get_pg_parents_ids(pg_id):
     # Removing the None value
     parent_groups.pop()
     return parent_groups
+
+
+def suggest_object_position(pg_id):
+    """
+    Assesses the positions of objects on the canvas in a given
+    Process Group and recommends a position for the next object.
+    Objects will snake down and right following the default
+    Spacing and Column counts provided in nipyapi.config
+
+    Args:
+        pg_id (str): UUID4 of the PG to assess
+
+    Returns:
+        (tuple): x and y of the recommended next position
+    """
+    obj_spacing = nipyapi.config.obj_spacing
+    obj_per_col = nipyapi.config.obj_per_col
+    pg = get_process_group(pg_id, 'id', False)
+    if not pg:
+        return nipyapi.config.obj_default_loc
+    obj_types = ['funnels', 'input_ports', 'output_ports', 'process_groups', 'processors', 'remote_process_groups']
+    obj = pg.nipyapi_extended.process_group_flow.flow.to_dict()
+    current_positions = []
+    for x in obj.keys():
+        if x in obj_types:
+            for i in obj[x]:
+                current_positions.append(i['position'])
+
+    object_count = len(current_positions)
+    max_x = max([
+        i['x'] for i in current_positions
+    ])
+    y_set = [
+        i['y'] for i in current_positions
+        if i['x'] == max_x
+    ]
+    if object_count % obj_per_col == 0:
+        # changing direction
+        out_x = max_x + obj_spacing
+        freeze_y = True
+    else:
+        # going down or up, x stays same
+        out_x = max_x
+        freeze_y = False
+    if int(object_count / obj_per_col) % 2 == 0:
+        # going down
+        if freeze_y:
+            out_y = min(y_set)
+        else:
+            out_y = min(y_set) + obj_spacing
+    else:
+        # going up
+        if freeze_y:
+            out_y = max(y_set)
+        else:
+            out_y = min(y_set) - obj_spacing
+    return out_x, out_y
