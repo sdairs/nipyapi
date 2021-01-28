@@ -650,7 +650,7 @@ def schedule_components(pg_id, scheduled, components=None):
     return False
 
 
-def schedule_processor(processor, scheduled, refresh=True):
+def schedule_processor(processor, scheduled, refresh=True, auto_enable=False):
     """
     Set a Processor to Start or Stop.
 
@@ -662,6 +662,7 @@ def schedule_processor(processor, scheduled, refresh=True):
         processor (ProcessorEntity): The Processor to target
         scheduled (bool): True to start, False to stop
         refresh (bool): Whether to refresh the object before action
+        auto_enable (bool): Whether to Enable a Processor if Disabled
 
     Returns:
         (bool): True for success, False for failure
@@ -669,6 +670,7 @@ def schedule_processor(processor, scheduled, refresh=True):
     """
     assert isinstance(processor, nipyapi.nifi.ProcessorEntity)
     assert isinstance(scheduled, bool)
+    assert isinstance(auto_enable, bool)
     assert isinstance(refresh, bool)
 
     def _running_schedule_processor(processor_):
@@ -693,6 +695,16 @@ def schedule_processor(processor, scheduled, refresh=True):
         assert isinstance(target, nipyapi.nifi.ProcessorEntity)
     else:
         target = processor
+    if target.component.state == 'DISABLED' and scheduled:
+        if auto_enable:
+            target.component.state = 'STOPPED'
+            nipyapi.nifi.ProcessorsApi().update_processor(target.id, target)
+        else:
+            raise ValueError(
+                "Processor is Disabled and auto_enable is False"
+            )
+    if target.status.run_status == 'Invalid' and scheduled:
+        raise ValueError("Cannot Schedule a Invalid Processor")
     result = schedule_components(
         pg_id=target.status.group_id,
         scheduled=scheduled,
@@ -1647,7 +1659,9 @@ def suggest_object_position(pg_id):
     pg = get_process_group(pg_id, 'id', False)
     if not pg:
         return nipyapi.config.obj_default_loc
-    obj_types = ['funnels', 'input_ports', 'output_ports', 'process_groups', 'processors', 'remote_process_groups']
+    obj_types = ['funnels', 'input_ports', 'output_ports',
+                 'process_groups', 'processors',
+                 'remote_process_groups']
     obj = pg.nipyapi_extended.process_group_flow.flow.to_dict()
     current_positions = []
     for x in obj.keys():
