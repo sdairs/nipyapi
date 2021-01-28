@@ -144,6 +144,7 @@ def get_process_group(identifier, identifier_type='name', greedy=True):
             # assuming unique fetch of pg id, 'root' is special case
             # implementing separately to avoid recursing entire canvas
             out = nipyapi.nifi.ProcessGroupsApi().get_process_group(identifier)
+            out.__setattr__('nipyapi_extended', recurse_flow(out.id))
         else:
             obj = list_all_process_groups()
             out = nipyapi.utils.filter_obj(
